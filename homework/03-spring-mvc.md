@@ -140,3 +140,109 @@ public class AuthController {
 }
 ```
 
+2. Controller 호출
+
+```java
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
+
+    @PostMapping("/login")
+    public void login(...) {}
+}
+```
+
+HandlerMapping이 찾은 Controller를 DispatcherServlet이 호출한다.
+
+Controller는 요청을 처리한 후 결과를 반환한다.
+
+@PostMapping("/login")
+public LoginResponse login(@RequestBody LoginRequest request) {
+    return authService.login(request);
+}
+3. HandlerAdapter 실행
+
+DispatcherServlet은 Controller를 직접 호출하지 않는다.
+
+중간에 HandlerAdapter를 사용하여 Controller를 실행한다.
+
+이는 다양한 형태의 Controller를 동일한 방식으로 처리하기 위해서이다.
+
+DispatcherServlet
+    ↓
+HandlerAdapter
+    ↓
+Controller
+
+Spring MVC 내부에서 자동으로 처리되므로 개발자가 직접 사용할 일은 거의 없다.
+
+4. Controller 결과 반환
+
+Controller는 요청 처리 후 결과를 반환한다.
+
+전통적인 MVC에서는 ModelAndView를 반환한다.
+```java
+@GetMapping("/login")
+public ModelAndView loginPage() {
+    return new ModelAndView("login");
+}
+```
+
+REST API에서는 객체를 반환한다.
+
+```java
+@GetMapping("/users/{id}")
+public UserResponse getUser(@PathVariable Long id) {
+    return userService.findById(id);
+}
+```
+5. ViewResolver 또는 HttpMessageConverter 호출
+
+#### MVC 방식
+
+ViewResolver가 논리적인 View 이름을 실제 View로 변환한다.
+
+```java
+return new ModelAndView("login");
+```
+↓
+
+`/WEB-INF/views/login.jsp`
+
+#### REST API 방식
+
+HttpMessageConverter가 객체를 JSON으로 변환한다.
+
+```java
+return new UserResponse("kusuri");
+```
+
+↓
+
+```json
+{
+  "name": "kusuri"
+}
+```
+
+대표적으로 `MappingJackson2HttpMessageConverter`가 사용된다.
+
+6. 응답 반환
+
+최종적으로 DispatcherServlet이 HTTP 응답을 생성하여 클라이언트에게 전달한다.
+
+```
+Client
+    ↓
+DispatcherServlet
+    ↓
+HandlerMapping
+    ↓
+HandlerAdapter
+    ↓
+Controller
+    ↓
+HttpMessageConverter
+    ↓
+Client
+```
